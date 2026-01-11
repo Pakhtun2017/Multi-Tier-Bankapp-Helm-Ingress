@@ -3,7 +3,7 @@ bankapp:
 
   image:
     repository: oolumee/bankapp
-    tag: "2"
+    tag: "1"
 
   service:
     type: ClusterIP
