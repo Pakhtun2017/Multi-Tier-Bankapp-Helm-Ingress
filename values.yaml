@@ -1,0 +1,38 @@
+bankapp:
+  replicas: 3
+
+  image:
+    repository: oolumee/bankapp
+    tag: "2"
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - www.pashtun-verse.com
+    annotations:
+      nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+      # ✅ sticky sessions (so JSESSIONID stays on same pod)
+      nginx.ingress.kubernetes.io/affinity: "cookie"
+      nginx.ingress.kubernetes.io/session-cookie-name: "route"
+      nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
+      nginx.ingress.kubernetes.io/session-cookie-max-age: "172800"
+      nginx.ingress.kubernetes.io/session-cookie-expires: "172800"
+
+  env:
+    datasourceUrl: jdbc:mysql://mysql-service:3306/bankappdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: Test@123
+
+mysql:
+  image: mysql:8
+  rootPassword: Test@123
+  database: bankappdb
+
+  service:
+    type: ClusterIP
+    port: 3306
