@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-bankapp
+spec:
+  replicas: {{ .Values.bankapp.replicas }}
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: bankapp
+  template:
+    metadata:
+      labels:
+        app: bankapp
+    spec:
+      containers:
+        - name: bankapp
+          image: {{ .Values.bankapp.image.repository }}:{{ default "latest" .Values.bankapp.image.tag }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+
+          env:
+            # ======================
+            # Database configuration
+            # ======================
+            - name: SPRING_DATASOURCE_URL
+              value: {{ .Values.bankapp.env.datasourceUrl | quote }}
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.bankapp.env.username | quote }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: {{ .Values.bankapp.env.password | quote }}
+
+            # =========================================
+            # REQUIRED for Spring Boot behind Ingress
+            # =========================================
+            - name: SERVER_FORWARD_HEADERS_STRATEGY
+              value: "framework"
+
+            - name: SERVER_TOMCAT_REMOTEIP_PROTOCOL_HEADER
+              value: "x-forwarded-proto"
+            - name: SERVER_TOMCAT_REMOTEIP_HOST_HEADER
+              value: "x-forwarded-host"
+            - name: SERVER_TOMCAT_REMOTEIP_PORT_HEADER
+              value: "x-forwarded-port"
+
+            # =========================================
+            # Session & cookie handling (LOGIN FIX)
+            # =========================================
+            - name: SERVER_SERVLET_SESSION_COOKIE_SAMESITE
+              value: "Lax"
+            - name: SERVER_SERVLET_SESSION_COOKIE_HTTP_ONLY
+              value: "true"
+
+          # ======================
+          # Health checks
+          # ======================
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
